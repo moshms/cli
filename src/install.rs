@@ -16,6 +16,7 @@ pub struct InstallOptions {
     pub admin_password: Option<String>,
     pub master_key: Option<String>,
     pub tunnel_token: Option<String>,
+    pub ghcr_user: Option<String>,
     pub no_start: bool,
     pub no_docker: bool,
     pub force: bool,
@@ -135,9 +136,27 @@ pub fn run(dir: &Path, options: InstallOptions) -> Result<()> {
         return Ok(());
     }
 
+    crate::compose::ghcr_login(options.ghcr_user.as_deref())?;
     crate::compose::run(crate::compose::command(dir).args(["pull"]))?;
     crate::compose::run(crate::compose::command(dir).args(["up", "-d"]))?;
     println!("Stack started. Open the server in a browser.");
+    Ok(())
+}
+
+pub fn update(dir: &Path, tag: Option<&str>, ghcr_user: Option<&str>) -> Result<()> {
+    let env_path = dir.join(".env");
+    let content = envfile::load(dir)?;
+    let content = if let Some(tag) = tag {
+        envfile::set_value(&content, "MC_TAG", tag)
+    } else {
+        content
+    };
+    envfile::write_secure(&env_path, &content)?;
+
+    crate::compose::ghcr_login(ghcr_user)?;
+    crate::compose::run(crate::compose::command(dir).args(["pull"]))?;
+    crate::compose::run(crate::compose::command(dir).args(["up", "-d"]))?;
+    println!("stack updated");
     Ok(())
 }
 

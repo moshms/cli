@@ -46,6 +46,12 @@ enum Command {
         #[arg(long)]
         file: PathBuf,
     },
+    Update {
+        #[arg(long)]
+        tag: Option<String>,
+        #[arg(long)]
+        ghcr_user: Option<String>,
+    },
     Doctor,
 }
 
@@ -69,6 +75,8 @@ struct InstallArgs {
     master_key: Option<String>,
     #[arg(long)]
     tunnel_token: Option<String>,
+    #[arg(long)]
+    ghcr_user: Option<String>,
     #[arg(long)]
     no_start: bool,
     #[arg(long)]
@@ -126,6 +134,7 @@ fn run() -> Result<()> {
                 admin_password: args.admin_password,
                 master_key: args.master_key,
                 tunnel_token: args.tunnel_token,
+                ghcr_user: args.ghcr_user,
                 no_start: args.no_start,
                 no_docker: args.no_docker,
                 force: args.force,
@@ -149,6 +158,9 @@ fn run() -> Result<()> {
         },
         Command::Migrate => {
             compose::run(compose::command(&cli.dir).args(["run", "--rm", "mc-api", "migrate"]))
+        }
+        Command::Update { tag, ghcr_user } => {
+            install::update(&cli.dir, tag.as_deref(), ghcr_user.as_deref())
         }
         Command::Export { output } => backup::export(&cli.dir, &output),
         Command::Import { file } => backup::import(&cli.dir, &file),
