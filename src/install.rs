@@ -36,7 +36,7 @@ pub fn run(dir: &Path, options: InstallOptions) -> Result<()> {
     let postgres_password = random_password();
     let master_key = options.master_key.unwrap_or_else(mc_auth::generate_token);
     let profiles = options.profiles.unwrap_or_default();
-    let tag = options.tag.unwrap_or_else(|| "latest".to_owned());
+    let tag = options.tag;
     let metrics = if profiles
         .split(',')
         .any(|profile| profile.trim() == "monitoring")
@@ -61,7 +61,6 @@ pub fn run(dir: &Path, options: InstallOptions) -> Result<()> {
         ("MC_DOMAIN", options.domain.as_deref().unwrap_or("")),
         ("MC_EMAIL", options.email.as_deref().unwrap_or("")),
         ("COMPOSE_PROFILES", profiles.as_str()),
-        ("MC_TAG", tag.as_str()),
         ("MC_METRICS", metrics),
         ("MC_COOKIE_SECURE", secure_cookie),
         ("MC_TLS", "off"),
@@ -71,6 +70,10 @@ pub fn run(dir: &Path, options: InstallOptions) -> Result<()> {
         ),
     ] {
         env = set_value(&env, key, value);
+    }
+
+    if let Some(tag) = tag.as_deref() {
+        env = set_value(&env, "MC_TAG", tag);
     }
 
     if options.no_docker {
