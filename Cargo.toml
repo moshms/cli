@@ -1,0 +1,13 @@
+[package]
+name = "mc-cli"
+description = "Command line installer and administrator for Music Cloud"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/moshms/cli"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+mc-auth = { git = "ssh://git@github.com/moshms/core.git", tag = "v0.1.0" }
+mc-core = { git = "ssh://git@github.com/moshms/core.git", tag = "v0.1.0" }
