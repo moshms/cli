@@ -9,5 +9,5 @@ repository = "https://github.com/moshms/cli"
 [dependencies]
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-mc-auth = { git = "ssh://git@github.com/moshms/core.git", tag = "v0.1.0" }
-mc-core = { git = "ssh://git@github.com/moshms/core.git", tag = "v0.1.0" }
+mc-auth = { git = "ssh://git@github.com/moshms/core.git", tag = "v0.1.1" }
+mc-core = { git = "ssh://git@github.com/moshms/core.git", tag = "v0.1.1" }
