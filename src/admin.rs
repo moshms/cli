@@ -12,8 +12,11 @@ pub fn create(dir: &Path, username: &str, password: &str, role: &str) -> Result<
     if username.is_empty() {
         bail!("username is required");
     }
-    if password.chars().count() < 8 {
-        bail!("password must contain at least 8 characters");
+    if password.chars().count() < 12 {
+        bail!("password must contain at least 12 characters");
+    }
+    if password.eq_ignore_ascii_case("change-me") {
+        bail!("default password is not allowed");
     }
     let role = role
         .parse::<Role>()
@@ -40,13 +43,36 @@ pub fn create(dir: &Path, username: &str, password: &str, role: &str) -> Result<
         bail!("failed to create user");
     }
 
+    let condition = match role {
+        Role::Admin => "(permissions & 1) <> 0 AND NOT is_everyone",
+        Role::Uploader => "lower(name) = lower('Загрузчик') AND NOT is_everyone",
+        Role::Listener => "",
+    };
+
+    if !condition.is_empty() {
+        psql_capture(
+            dir,
+            &format!(
+                "INSERT INTO user_roles (user_id, role_id)
+                 SELECT :'id'::uuid, r.id FROM roles r
+                 WHERE {condition}
+                 LIMIT 1
+                 ON CONFLICT DO NOTHING;"
+            ),
+            &[("id", id.to_string())],
+        )?;
+    }
+
     println!("user {username} created with role {role}");
     Ok(())
 }
 
 pub fn reset_password(dir: &Path, username: &str, password: &str) -> Result<()> {
-    if password.chars().count() < 8 {
-        bail!("password must contain at least 8 characters");
+    if password.chars().count() < 12 {
+        bail!("password must contain at least 12 characters");
+    }
+    if password.eq_ignore_ascii_case("change-me") {
+        bail!("default password is not allowed");
     }
     let password_hash = mc_auth::hash_password(password)?;
 
