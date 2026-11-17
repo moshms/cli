@@ -27,15 +27,14 @@ pub fn create(dir: &Path, username: &str, password: &str, role: &str) -> Result<
 
     let output = psql_capture(
         dir,
-        "INSERT INTO users (id, username, password_hash, subsonic_secret, role)
-         VALUES (:'id'::uuid, :'username', :'password_hash', :'subsonic_secret', :'role')
+        "INSERT INTO users (id, username, password_hash, subsonic_secret)
+         VALUES (:'id'::uuid, :'username', :'password_hash', :'subsonic_secret')
          RETURNING id;",
         &[
             ("id", id.to_string()),
             ("username", username.to_owned()),
             ("password_hash", password_hash),
             ("subsonic_secret", subsonic_secret),
-            ("role", role.as_str().to_owned()),
         ],
     )?;
 
@@ -108,7 +107,23 @@ pub fn list(dir: &Path) -> Result<()> {
         "-d",
         "musiccloud",
         "-c",
-        "SELECT username, role, is_active FROM users ORDER BY lower(username);",
+        "SELECT u.username,
+                CASE
+                    WHEN EXISTS (
+                        SELECT 1 FROM user_roles ur
+                        JOIN roles r ON r.id = ur.role_id
+                        WHERE ur.user_id = u.id AND (r.permissions & 1) <> 0
+                    ) THEN 'admin'
+                    WHEN EXISTS (
+                        SELECT 1 FROM user_roles ur
+                        JOIN roles r ON r.id = ur.role_id
+                        WHERE ur.user_id = u.id AND lower(r.name) = lower('Загрузчик')
+                    ) THEN 'uploader'
+                    ELSE 'listener'
+                END AS role,
+                u.is_active
+         FROM users u
+         ORDER BY lower(u.username);",
     ]);
     compose::run(&mut command)
 }
