@@ -31,3 +31,18 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo test --all-features
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: moshms/deploy
+          ref: main
+          path: upstream
+          token: ${{ secrets.DEPLOY_READ_KEY }}
+      - name: Check compose drift
+        run: |
+          diff -u upstream/compose.yml assets/compose.yml
+          diff -u upstream/.env.example assets/env.example
